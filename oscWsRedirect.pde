@@ -118,7 +118,6 @@ void onFinishEvent(CountdownTimer t) {
 }
 
 void webSocketServerEvent(String msg) {
-  println(msg);
 }
 
 void oscEvent(OscMessage m) {
@@ -151,78 +150,12 @@ void oscEvent(OscMessage m) {
     queue.add(mr);
   } else if (m.addrPattern().equals("/bci_art/svm/prediction")) {
     svmTarget = m.get(0).floatValue();
-  } else if (m.addrPattern().equals("/muse/tsne")) {
-    oscCount++;
-    if (oscCount % 8 != 0) return;
-
-    target = map(m.get(0).floatValue(), 0, 1, -PI, PI);
-    OscMessage mr = new OscMessage("/inviso/object/add");
-    float r = 200;
-    float x = r * cos(target);
-    float z = r * sin(target);
-    mr.add(x);
-    mr.add(0.0);
-    mr.add(z);
-
-    int tmplIndex = 0;
-    if (m.get(2).intValue() < 80) tmplIndex = 1;
-    else if (m.get(2).intValue() < 120) tmplIndex = 2;
-    mr.add(tmplIndex);
-
-    queue.add(mr);
-
-    mr = new OscMessage("/inviso/volume/decrement");
-    mr.add(0.2);
-    queue.add(mr);
-
-    //OscMessage mr = new OscMessage("/inviso/position");
-    //float p = 0.9;
-    //interpolated = interpolated * p + (1-p) * target;
-    //float r = 400;
-    //float x = r * cos(interpolated);
-    //float z = r * sin(interpolated);
-    //mr.add(x);
-    ////mr.add(map(m.get(0).floatValue(), 0, 1, -500, 500));
-    //mr.add(0.0);
-    //mr.add(z);
-    ////mr.add(map(m.get(1).floatValue(), 0, 1, -500, 500));
-    //ws.sendMessage(mr.getBytes());
   } else {
-    //ws.sendMessage(m.getBytes());
   }
 }
 
 void mousePressed() {
-  OscMessage m = new OscMessage("/inviso/object/add");
-  m.add(map(mouseX, 0, width, -300, 300));
-  m.add(0.0);
-  m.add(map(mouseY, 0, height, -300, 300));
-  queue.add(m);
-
-  m = new OscMessage("/inviso/volume/decrement");
-  m.add(0.1);
-  queue.add(m);
-}
-
-void mouseMoved() {
-  //OscMessage m = new OscMessage("/inviso/volume");
-  //m.add(0);
-  //m.add(map(mouseX, 0, width, 0, 1));
-  //queue.add(m);
-  //m = new OscMessage("/inviso/volume");
-  //m.add(1);
-  //m.add(map(mouseX, 0, width, 1, 0));
-  //queue.add(m);
 }
 
 void keyPressed() {
-  if (key == '-') {
-    OscMessage m = new OscMessage("/inviso/volume/decrement");
-    m.add(0.1);
-    queue.add(m);
-  } else if (key == ' ') {
-    OscMessage m = new OscMessage("/inviso/volume/all");
-    m.add(random(1.0));
-    queue.add(m);
-  }
 }
