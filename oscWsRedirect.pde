@@ -10,8 +10,6 @@ import websockets.*;
 OscP5 oscP5;
 
 WebsocketServer ws;
-int now;
-float x, y;
 
 CountdownTimer timer;
 
@@ -39,9 +37,6 @@ void setup() {
   frameRate(30);
   size(600, 600);
   ws= new WebsocketServer(this, 8081, "/");
-  now=millis();
-  x=0;
-  y=0;
 
   oscP5 = new OscP5(this, 13000);
 
@@ -59,7 +54,6 @@ void setup() {
 
 void draw() {
   background(0);
-  ellipse(x, y, 10, 10);
 
   float p = 0.985;
   int svmNextIndex = (svmIndex + 1) % svmInterpolated.length;
@@ -125,17 +119,9 @@ void onFinishEvent(CountdownTimer t) {
 
 void webSocketServerEvent(String msg) {
   println(msg);
-  x=random(width);
-  y=random(height);
 }
 
-/* incoming osc message are forwarded to the oscEvent method. */
 void oscEvent(OscMessage m) {
-  /* print the address pattern and the typetag of the received OscMessage */
-  //print("### received an osc message.");
-  //print(" addrpattern: "+m.addrPattern());
-  //println(" typetag: "+m.typetag());
-
   if (m.addrPattern().equals("/3dsoundone/orientation")) {
     Quaternion q = new Quaternion(m.get(0).floatValue(), m.get(1).floatValue(), m.get(2).floatValue(), m.get(3).floatValue());
 
@@ -158,7 +144,6 @@ void oscEvent(OscMessage m) {
     mr.add(rz);
     queue.add(mr);
   } else if (m.addrPattern().equals("/gyrosc/gyro")) {
-    //print(m.get(0).floatValue());
     OscMessage mr = new OscMessage("/inviso/head/rotation");
     mr.add(-m.get(1).floatValue());
     mr.add(m.get(2).floatValue() + PI);
