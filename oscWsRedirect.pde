@@ -20,7 +20,7 @@ ArrayList<OscMessage> queue = new ArrayList<OscMessage>();
 int oscCount = 0;
 float interpolated = 0;
 float target = 0;
-float[] svmInterpolated = new float[8];
+float[] svmInterpolated = new float[128];
 int svmIndex = 0;
 float svmTarget = 0;
 
@@ -61,7 +61,7 @@ void draw() {
   background(0);
   ellipse(x, y, 10, 10);
 
-  float p = 0.98;
+  float p = 0.985;
   int svmNextIndex = (svmIndex + 1) % svmInterpolated.length;
   svmInterpolated[svmNextIndex] = svmInterpolated[svmIndex] * p + (1-p) * svmTarget;
 
@@ -80,15 +80,15 @@ void draw() {
     }
   }
 
-  int svmOldIndex = (svmIndex - 1 + svmInterpolated.length) % svmInterpolated.length;
+  int svmOldIndex = (svmIndex - 4 * 3 + svmInterpolated.length) % svmInterpolated.length;
 
   OscMessage mr = new OscMessage("/inviso/volume");
   mr.add(curScene * 2 + 1);
-  mr.add((1-svmInterpolated[svmOldIndex])*2);
+  mr.add(constrain(((1-svmInterpolated[svmOldIndex])-0.5)*3, 0, 1));
   queue.add(mr);
   mr = new OscMessage("/inviso/volume");
   mr.add(curScene * 2 + 0);
-  mr.add(svmInterpolated[svmOldIndex]);
+  mr.add(constrain((svmInterpolated[svmOldIndex]-0.5)*3, 0, 1));
   queue.add(mr);
 
   svmIndex = svmNextIndex;
@@ -113,6 +113,14 @@ void onTickEvent(CountdownTimer t, long timeLeftUntilFinish) {
 }
 
 void onFinishEvent(CountdownTimer t) {
+  OscMessage mr = new OscMessage("/inviso/volume");
+  mr.add(fadeOutScene * 2 + 0);
+  mr.add(0);
+  queue.add(mr);
+  mr = new OscMessage("/inviso/volume");
+  mr.add(fadeOutScene * 2 + 1);
+  mr.add(0);
+  queue.add(mr);
 }
 
 void webSocketServerEvent(String msg) {
