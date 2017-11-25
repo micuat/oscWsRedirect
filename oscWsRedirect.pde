@@ -1,10 +1,9 @@
+import de.looksgood.ani.*;
+import de.looksgood.ani.easing.*;
 import com.dhchoi.*;
-
 import toxi.geom.*;
-
 import netP5.*;
 import oscP5.*;
-
 import websockets.*;
 
 OscP5 oscP5;
@@ -31,14 +30,21 @@ boolean didPassLow = false;
 boolean didPassHigh = false;
 int curNumPassed = 0;
 
+float chCalm = 0;
+float chDist = 0;
+
+Ani aniCalm, aniDist;
+
 Quaternion initQuaternion;
 
 void setup() {
   frameRate(30);
   size(600, 600);
-  ws= new WebsocketServer(this, 8081, "/");
+  ws = new WebsocketServer(this, 8081, "/");
 
   oscP5 = new OscP5(this, 13000);
+
+  Ani.init(this);
 
   for (int i = 0; i < svmInterpolated.length; i++) {
     svmInterpolated[i] = 0;
@@ -59,8 +65,20 @@ void draw() {
   int svmNextIndex = (svmIndex + 1) % svmInterpolated.length;
   svmInterpolated[svmNextIndex] = svmInterpolated[svmIndex] * p + (1-p) * svmTarget;
 
-  if (svmInterpolated[svmNextIndex] < lowThreshold) didPassLow = true;
-  if (svmInterpolated[svmNextIndex] > highThreshold) didPassHigh = true;
+  if (aniCalm == null || !aniCalm.isPlaying()) {
+    if (svmInterpolated[svmNextIndex] < lowThreshold) {
+      didPassLow = true;
+      println("go to distract");
+      aniCalm = new Ani(this, 1, 3, "chCalm", 0, Ani.EXPO_IN_OUT);
+      aniDist = new Ani(this, 1, 3, "chDist", 1, Ani.EXPO_IN_OUT);
+    }
+    if (svmInterpolated[svmNextIndex] > highThreshold) {
+      didPassHigh = true;
+      println("go to calm");
+      aniCalm = new Ani(this, 1, 3, "chCalm", 1, Ani.EXPO_IN_OUT);
+      aniDist = new Ani(this, 1, 3, "chDist", 0, Ani.EXPO_IN_OUT);
+    }
+  }
   if (didPassLow && didPassHigh) {
     didPassLow = didPassHigh = false;
     curNumPassed++;
@@ -77,12 +95,12 @@ void draw() {
   int svmOldIndex = (svmIndex - 4 * 3 + svmInterpolated.length) % svmInterpolated.length;
 
   OscMessage mr = new OscMessage("/inviso/volume");
-  mr.add(curScene * 2 + 1);
-  mr.add(constrain(((1-svmInterpolated[svmOldIndex])-0.5)*3, 0, 1));
+  mr.add(curScene * 2 + 0);
+  mr.add(chCalm);
   queue.add(mr);
   mr = new OscMessage("/inviso/volume");
-  mr.add(curScene * 2 + 0);
-  mr.add(constrain((svmInterpolated[svmOldIndex]-0.5)*3, 0, 1));
+  mr.add(curScene * 2 + 1);
+  mr.add(chDist);
   queue.add(mr);
 
   svmIndex = svmNextIndex;
