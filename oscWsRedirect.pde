@@ -1,6 +1,7 @@
+import java.util.Iterator;
+
 import de.looksgood.ani.*;
 import de.looksgood.ani.easing.*;
-import com.dhchoi.*;
 import toxi.geom.*;
 import netP5.*;
 import oscP5.*;
@@ -9,8 +10,6 @@ import websockets.*;
 OscP5 oscP5;
 
 WebsocketServer ws;
-
-CountdownTimer timer;
 
 ArrayList<OscMessage> queue = new ArrayList<OscMessage>();
 
@@ -24,8 +23,6 @@ float svmTarget = 0;
 int numScenes = 2;
 float lowThreshold = 0.1;
 float highThreshold = 0.9;
-int curScene = 0;
-int fadeOutScene = 0;
 boolean didPassLow = false;
 boolean didPassHigh = false;
 int curNumPassed = 0;
@@ -34,6 +31,11 @@ float chCalm = 0;
 float chDist = 0;
 
 Ani aniCalm, aniDist;
+
+ArrayList<SoundObject> sounds = new ArrayList<SoundObject>();
+ArrayList<SoundPair> pairs = new ArrayList<SoundPair>();
+Iterator<SoundPair> pairIterator;
+SoundPair curPair;
 
 Quaternion initQuaternion;
 
@@ -50,12 +52,15 @@ void setup() {
     svmInterpolated[i] = 0;
   }
 
-  for (int i = 0; i < numScenes*2; i++) {
-    OscMessage mr = new OscMessage("/inviso/volume");
-    mr.add(i);
-    mr.add(0);
-    queue.add(mr);
+  for (int i = 0; i < numScenes * 2; i++) {
+    sounds.add(new SoundObject(i));
   }
+
+  for (int i = 0; i < numScenes; i++) {
+    pairs.add(new SoundPair(sounds.get(i * 2 + 0), sounds.get(i * 2 + 1)));
+  }
+  pairIterator = pairs.iterator();
+  curPair = pairIterator.next();
 }
 
 void draw() {
@@ -65,43 +70,41 @@ void draw() {
   int svmNextIndex = (svmIndex + 1) % svmInterpolated.length;
   svmInterpolated[svmNextIndex] = svmInterpolated[svmIndex] * p + (1-p) * svmTarget;
 
-  if (aniCalm == null || !aniCalm.isPlaying()) {
+  if (!curPair.isPlaying()) {
     if (svmInterpolated[svmNextIndex] < lowThreshold) {
       didPassLow = true;
-      println("go to distract");
-      aniCalm = new Ani(this, 1, 3, "chCalm", 0, Ani.EXPO_IN_OUT);
-      aniDist = new Ani(this, 1, 3, "chDist", 1, Ani.EXPO_IN_OUT);
+      if (curNumPassed-1 >= 3 && numScenes > 1) {
+        curPair.fadeToDist();
+      }
     }
     if (svmInterpolated[svmNextIndex] > highThreshold) {
       didPassHigh = true;
-      println("go to calm");
-      aniCalm = new Ani(this, 1, 3, "chCalm", 1, Ani.EXPO_IN_OUT);
-      aniDist = new Ani(this, 1, 3, "chDist", 0, Ani.EXPO_IN_OUT);
+      if (curNumPassed-1 >= 3 && numScenes > 1) {
+        curPair.fadeToCalm();
+      }
     }
   }
   if (didPassLow && didPassHigh) {
     didPassLow = didPassHigh = false;
     curNumPassed++;
 
-    if (curNumPassed >= 2 && numScenes > 1) {
-      fadeOutScene = curScene;
-      timer = CountdownTimerService.getNewCountdownTimer(this).configure(100, 1000).start();
-
-      curScene = (curScene + 1) % numScenes;
-      println("go to scene " + curScene);
+    if (curNumPassed >= 3 && numScenes > 1) {
+      curNumPassed = 0;
+      curPair.fadeOutAll();
+      if (pairIterator.hasNext()) {
+        curPair = pairIterator.next();
+        println("go to next scene");
+      } else {
+        pairIterator = pairs.iterator();
+        curPair = pairIterator.next();
+        println("go to first scene");
+      }
     }
   }
 
-  int svmOldIndex = (svmIndex - 4 * 3 + svmInterpolated.length) % svmInterpolated.length;
-
-  OscMessage mr = new OscMessage("/inviso/volume");
-  mr.add(curScene * 2 + 0);
-  mr.add(chCalm);
-  queue.add(mr);
-  mr = new OscMessage("/inviso/volume");
-  mr.add(curScene * 2 + 1);
-  mr.add(chDist);
-  queue.add(mr);
+  for(SoundObject sound: sounds) {
+    sound.update();
+  }
 
   svmIndex = svmNextIndex;
 
@@ -111,28 +114,6 @@ void draw() {
     if (m != null)
       ws.sendMessage(m.getBytes());
   }
-}
-
-void onTickEvent(CountdownTimer t, long timeLeftUntilFinish) {
-  OscMessage mr = new OscMessage("/inviso/volume");
-  mr.add(fadeOutScene * 2 + 0);
-  mr.add(timeLeftUntilFinish * 0.001);
-  queue.add(mr);
-  mr = new OscMessage("/inviso/volume");
-  mr.add(fadeOutScene * 2 + 1);
-  mr.add(timeLeftUntilFinish * 0.001);
-  queue.add(mr);
-}
-
-void onFinishEvent(CountdownTimer t) {
-  OscMessage mr = new OscMessage("/inviso/volume");
-  mr.add(fadeOutScene * 2 + 0);
-  mr.add(0);
-  queue.add(mr);
-  mr = new OscMessage("/inviso/volume");
-  mr.add(fadeOutScene * 2 + 1);
-  mr.add(0);
-  queue.add(mr);
 }
 
 void webSocketServerEvent(String msg) {
