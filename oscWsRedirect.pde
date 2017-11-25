@@ -74,12 +74,14 @@ void draw() {
     if (svmInterpolated[svmNextIndex] < lowThreshold) {
       didPassLow = true;
       if (curNumPassed-1 >= 3 && numScenes > 1) {
+      } else {
         curPair.fadeToDist();
       }
     }
     if (svmInterpolated[svmNextIndex] > highThreshold) {
       didPassHigh = true;
       if (curNumPassed-1 >= 3 && numScenes > 1) {
+      } else {
         curPair.fadeToCalm();
       }
     }
@@ -102,7 +104,7 @@ void draw() {
     }
   }
 
-  for(SoundObject sound: sounds) {
+  for (SoundObject sound : sounds) {
     sound.update();
   }
 

@@ -16,12 +16,12 @@ class SoundObject {
   }
 
   void fadeVolume(float v) {
-    ani.end();
+    ani.pause();
     ani = new Ani(this, 3, "volume", v, Ani.EXPO_IN_OUT);
   }
 
   void fadeVolumeDelay(float v) {
-    ani.end();
+    ani.pause();
     ani = new Ani(this, 3, 2, "volume", v, Ani.EXPO_IN_OUT);
   }
 
