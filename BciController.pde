@@ -1,3 +1,6 @@
+OscP5 oscPyP5;
+NetAddress pyAddress;
+
 class BciProgress {
   float x;
   float y;
@@ -41,14 +44,22 @@ class BciController {
   BciProgress p0 = new BciProgress();
   BciProgress p1 = new BciProgress();
 
-  BciController() {
+  void setup() {
     p0.x = 100;
     p1.x = 100;
     p0.y = 100;
     p1.y = 150;
     p0.setup(0);
     p1.setup(1);
-  }
+
+    oscPyP5 = new OscP5(this, 12200);
+    pyAddress = new NetAddress("127.0.0.1", 12100);
+
+    OscMessage m;
+    m = new OscMessage("/bci_art/svm/reset");
+    m.add(2);
+    oscPyP5.send(m, pyAddress);
+}
 
   void draw() {
     if (p0.progress == 1 && p1.progress == 1) {
