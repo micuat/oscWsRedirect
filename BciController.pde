@@ -44,6 +44,8 @@ class BciController {
   BciProgress p0 = new BciProgress();
   BciProgress p1 = new BciProgress();
 
+  int score = 0;
+
   void setup() {
     p0.x = 100;
     p1.x = 100;
@@ -59,7 +61,7 @@ class BciController {
     m = new OscMessage("/bci_art/svm/reset");
     m.add(2);
     oscPyP5.send(m, pyAddress);
-}
+  }
 
   void draw() {
     if (p0.progress == 1 && p1.progress == 1) {
@@ -102,6 +104,13 @@ class BciController {
 
     p0.draw();
     p1.draw();
+    fill(255);
+    text(str(score) + "%", 100, 50);
+    float x = 100, y = 70, w = 200, h = 10;
+    fill(255, 128);
+    noStroke();
+    rect(x, y, w, h);
+    rect(x, y, map(svmInterpolated, 0, 1, 0, w), h);
   }
 
   void mousePressed() {
@@ -125,6 +134,8 @@ class BciController {
       p1.progress = constrain((float)m.get(0).intValue() / m.get(1).intValue(), 0, 1);
     } else if (m.addrPattern().equals("/bci_art/svm/prediction")) {
       svmTarget = m.get(0).floatValue();
+    } else if (m.addrPattern().equals("/bci_art/svm/score")) {
+      score = (int)(m.get(0).floatValue() * 100);
     }
   }
 }
