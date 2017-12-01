@@ -1,4 +1,5 @@
 import java.util.Iterator;
+import java.util.Map;
 
 import de.looksgood.ani.*;
 import de.looksgood.ani.easing.*;
@@ -68,6 +69,11 @@ void draw() {
 void webSocketServerEvent(String msg) {
 }
 
+void webSocketServerEvent(byte[] bytes, int offset, int length) {
+  OscBinary b = new OscBinary(bytes);
+  oscEvent(new OscMessage(b));
+}
+
 void oscEvent(OscMessage m) {
   String[] levels = m.addrPattern().split("/");
 
@@ -79,6 +85,10 @@ void oscEvent(OscMessage m) {
     headController.oscEvent(m);
   } else if (levels[1].equals("gyrosc")) {
     headController.oscEvent(m);
+  } else if (levels[1].equals("gyrosc")) {
+    if(m.addrPattern().equals("/subpac/gain")) {
+      println(m.get(0).floatValue());
+    }
   } else {
   }
 }
