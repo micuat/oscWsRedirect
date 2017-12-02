@@ -8,10 +8,12 @@ import oscP5.*;
 import websockets.*;
 
 OscP5 oscP5;
+NetAddress pdAddress;
 
 WebsocketServer ws;
 
 ArrayList<OscMessage> queue = new ArrayList<OscMessage>();
+ArrayList<OscMessage> queuePd = new ArrayList<OscMessage>();
 
 int numScenes = 2;
 
@@ -31,6 +33,7 @@ void setup() {
   ws = new WebsocketServer(this, 8081, "/");
 
   oscP5 = new OscP5(this, 13000);
+  pdAddress = new NetAddress("127.0.0.1",12555);
   
   Ani.init(this);
 
@@ -64,6 +67,13 @@ void draw() {
     if (m != null)
       ws.sendMessage(m.getBytes());
   }
+
+  queueTmp = queuePd;
+  queuePd = new ArrayList<OscMessage>();
+  for (OscMessage m : queueTmp) {
+    if (m != null)
+      oscP5.send(m, pdAddress);
+  }
 }
 
 void webSocketServerEvent(String msg) {
@@ -85,9 +95,9 @@ void oscEvent(OscMessage m) {
     headController.oscEvent(m);
   } else if (levels[1].equals("gyrosc")) {
     headController.oscEvent(m);
-  } else if (levels[1].equals("gyrosc")) {
-    if(m.addrPattern().equals("/subpac/gain")) {
-      println(m.get(0).floatValue());
+  } else if (levels[1].equals("subpac")) {
+    if(levels[2].equals("gain")) {
+      queuePd.add(m);
     }
   } else {
   }
